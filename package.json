@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/peteward44/preprocessify-loader/issues"
   },
-  "homepage": "https://github.com/peteward44/preprocessify-loader#readme"
+  "homepage": "https://github.com/peteward44/preprocessify-loader#readme",
+  "dependencies": {
+    "loader-utils": "^1.1.0"
+  }
 }
