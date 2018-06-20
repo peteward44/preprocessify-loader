@@ -1,7 +1,18 @@
+const _ = require( 'lodash' );
 const loaderUtils = require( 'loader-utils' );
 
 const ifRegex = /@if\s+(.+)\s*(!?=)\s*(.+)[\S\s]*?@endif?/g;
+const lineEndingRegex = /\n/g;
+const lineEndingRegexCarriageReturn = /\r\n/;
 const quotes = ["'", '"', '`'];
+
+const getEchoRegexes = _.memoize( function( context ) {
+	const result = {};
+	for ( const name of Object.keys( context ) ) {
+		result[name] = new RegExp( `/\\*\\s*@echo\\s+${name}\\s*\\*/`, 'g' );
+	}
+	return result;
+} );
 
 function shouldKeepIfStatement( context, lhs, operator, rhs ) {
 	const value = context.hasOwnProperty( lhs ) ? context[lhs].toString() : '';
@@ -19,9 +30,9 @@ function shouldKeepIfStatement( context, lhs, operator, rhs ) {
 function webpackPreprocessor( content, optionsOverride ) {
 	const options = ( optionsOverride || loaderUtils.getOptions( this ) ) || {};
 	if ( options.context ) {
-		for ( const name of Object.keys( options.context ) ) {
-			const regex = new RegExp( `/\\*\\s*@echo\\s+${name}\\s*\\*/`, 'g' );
-			content = content.replace( regex, options.context[name] );
+		const regexes = getEchoRegexes( options.context );
+		for ( const name of Object.keys( regexes ) ) {
+			content = content.replace( regexes[name], options.context[name] );
 		}
 
 		ifRegex.lastIndex = 0;
@@ -33,10 +44,15 @@ function webpackPreprocessor( content, optionsOverride ) {
 				const operator = m[2];
 				const rhs = m[3];
 				if ( !shouldKeepIfStatement( options.context, lhs, operator, rhs ) ) {
-					const regexMatchLength = m[0].length;
+					const removedSectionLength = m[0].length;
+					const removedSectionStartIndex = ifRegex.lastIndex - removedSectionLength;
+					const removedSection = content.substr( removedSectionStartIndex, removedSectionLength );
+					const lineEndingCount = removedSection.match( lineEndingRegex ).length;
+					const usesCrLf = !!removedSection.match( lineEndingRegexCarriageReturn );
+					const replacementString = _.repeat( usesCrLf ? '\r\n' : '\n', lineEndingCount );
 					const suffix = content.slice( ifRegex.lastIndex );
-					content = content.slice( 0, ifRegex.lastIndex - regexMatchLength ) + suffix;
-					ifRegex.lastIndex -= regexMatchLength;
+					content = content.slice( 0, removedSectionStartIndex ) + replacementString + suffix;
+					ifRegex.lastIndex -= removedSectionLength;
 				}
 			}
 		} while ( m );
