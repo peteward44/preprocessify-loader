@@ -1,10 +1,11 @@
 const _ = require( 'lodash' );
 const loaderUtils = require( 'loader-utils' );
 
-const ifRegex = /@if\s+(.+)\s*(!?=)\s*(.+)[\S\s]*?@endif?/g;
+const ifRegex = /@if\s+(.+?)\s*(!?=)\s*(.+)[\S\s]*?@endif?/g;
 const lineEndingRegex = /\n/g;
 const lineEndingRegexCarriageReturn = /\r\n/;
 const quotes = ["'", '"', '`'];
+
 
 const getEchoRegexes = _.memoize( function( context ) {
 	const result = {};
@@ -14,11 +15,13 @@ const getEchoRegexes = _.memoize( function( context ) {
 	return result;
 } );
 
+
 function shouldKeepIfStatement( context, lhs, operator, rhs ) {
 	const value = context.hasOwnProperty( lhs ) ? context[lhs].toString() : '';
 	if ( quotes.includes( rhs[0] ) && rhs[0] === rhs[rhs.length - 1] ) {
 		rhs = rhs.substring( 1, rhs.length - 1 );
 	}
+		console.log( `operator=${operator} value=${value} rhs=${rhs}` );
 	if ( operator === '=' ) {
 		return value === rhs;
 	} else if ( operator === '!=' ) {
@@ -26,6 +29,7 @@ function shouldKeepIfStatement( context, lhs, operator, rhs ) {
 	}
 	throw new Error( `Unknown operator "${operator}" in "if" statement!` );
 }
+
 
 function webpackPreprocessor( content, optionsOverride ) {
 	const options = ( optionsOverride || loaderUtils.getOptions( this ) ) || {};
