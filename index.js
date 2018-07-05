@@ -21,7 +21,6 @@ function shouldKeepIfStatement( context, lhs, operator, rhs ) {
 	if ( quotes.includes( rhs[0] ) && rhs[0] === rhs[rhs.length - 1] ) {
 		rhs = rhs.substring( 1, rhs.length - 1 );
 	}
-		console.log( `operator=${operator} value=${value} rhs=${rhs}` );
 	if ( operator === '=' ) {
 		return value === rhs;
 	} else if ( operator === '!=' ) {
